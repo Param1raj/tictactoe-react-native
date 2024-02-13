@@ -5,91 +5,161 @@
  * @format
  */
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useState} from 'react';
 import {
+  Dimensions,
+  Pressable,
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from 'react-native';
+import Button from './src/components/Button';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+const indexes: Array<[number, number]> = [
+  [0, 0],
+  [0, 1],
+  [0, 2],
+  [1, 0],
+  [1, 1],
+  [1, 2],
+  [2, 0],
+  [2, 1],
+  [2, 2],
+];
 
 function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  // tictactoe
+  // who is playing?
+  const [player, setPlayer] = useState('Player 1');
+  const [won, setWon] = useState('');
+  // what are the options?
+  const [options, setOptions] = useState<string[][]>([
+    ['', '', ''],
+    ['', '', ''],
+    ['', '', ''],
+  ]);
+  const [reload, setReload] = useState(false);
+  // which option is selected?
+  const selectAnOption = (indexes: [number, number]) => {
+    if (reload) {
+      setReload(false);
+    }
+    console.log('indexes:', indexes);
+    const selectedOption = options[indexes[0]][indexes[1]];
+    console.log('selectedOption:', selectedOption);
+    if (selectedOption === '') {
+      let newOptions = options;
+      if (player === 'Player 1') {
+        newOptions[indexes[0]][indexes[1]] = 'X';
+      } else {
+        newOptions[indexes[0]][indexes[1]] = 'O';
+      }
+      setOptions(newOptions);
+    }
+    console.log(player);
+    checkWin();
+    console.log('Option updated after click!', options);
+  };
+  // did you won?
+  const checkHorizontally = (): boolean => {
+    let flag = false;
+    for (let row = 0; row < options.length; row++) {
+      let line = options[row];
+      if (line[0] && line[1] && line[2])
+        if (line[0] === line[1] && line[1] === line[2]) flag = true;
+    }
+    return flag;
+  };
+  const checkVertically = () => {
+    let flag = false;
+    for (let column = 0; column < options.length; column++) {
+      if (options[0][column] && options[1][column] && options[2][column])
+        if (
+          options[0][column] === options[1][column] &&
+          options[1][column] === options[2][column]
+        )
+          flag = true;
+    }
+    return flag;
+  };
+  const checkDiagonally = () => {
+    let flag = false;
+    if (options[0][0] === options[1][1] && options[1][1] == options[2][2]) {
+      if (options[0][0] && options[1][1] && options[2][2]) flag = true;
+    } else if (
+      options[0][2] === options[1][1] &&
+      options[1][1] === options[2][0]
+    ) {
+      if (options[0][2] && options[1][1] && options[2][0]) flag = true;
+    }
+    return flag;
+  };
+  const checkWin = () => {
+    console.log('checked horizontally:', checkHorizontally());
+    console.log('checked vertically:', checkVertically());
+    console.log('checked diagonally:', checkDiagonally());
+    if (checkHorizontally() || checkVertically() || checkDiagonally()) {
+      setWon(player);
+    }
+  };
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const handleReload = () => {
+    setWon('');
+    setOptions([
+      ['', '', ''],
+      ['', '', ''],
+      ['', '', ''],
+    ]);
+    setReload(true);
+    setPlayer('Player 1');
+    console.log('Options ', options);
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
+    <SafeAreaView>
+      <StatusBar backgroundColor={'white'} barStyle={'dark-content'} />
+      <ScrollView contentInsetAdjustmentBehavior="automatic">
+        <View style={styles.container}>
+          <View style={styles.wrapper}>
+            <View style={styles.headerContainer}>
+              {won && (
+                <Text style={[styles.headerText, {color: '#8BE78B'}]}>
+                  {won} won the game
+                </Text>
+              )}
+              {!won && (
+                <Text style={styles.headerText}>{player} is playing...</Text>
+              )}
+            </View>
+            <View style={styles.bodyWrapper}>
+              <View style={styles.bodyContainer}>
+                {indexes.map((item, index) => (
+                  <Button
+                    key={index}
+                    player={player}
+                    setPlayer={setPlayer}
+                    index={item}
+                    selectAnOption={selectAnOption}
+                    finish={!!won}
+                    reload={reload}
+                  />
+                ))}
+              </View>
+            </View>
+            <Pressable
+              style={[
+                styles.headerContainer,
+                {
+                  backgroundColor: '#62D2E2',
+                },
+              ]}
+              onPress={handleReload}>
+              <Text style={styles.headerText}>Reload</Text>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -97,21 +167,45 @@ function App(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  wrapper: {
+    height: '80%',
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  container: {
+    borderColor: 'red',
+    height: Dimensions.get('window').height,
+    padding: 15,
+    // rowGap: 10,
+    justifyContent: 'center',
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
+  headerContainer: {
+    backgroundColor: '#EA5B5F',
+    height: 60,
+    justifyContent: 'center',
+    borderRadius: 20,
+    // textAlign: 'center',
   },
-  highlight: {
-    fontWeight: '700',
+  headerText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+    textAlign: 'center',
+  },
+  bodyContainer: {
+    height: '80%',
+    // borderWidth: 1,
+    borderColor: 'red',
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    columnGap: 5,
+    // justifyContent: 'center',
+    rowGap: 5,
+  },
+  bodyWrapper: {
+    // height: '90%',
+    justifyContent: 'center',
+    // borderWidth: 1,
+    borderColor: 'red',
   },
 });
 
